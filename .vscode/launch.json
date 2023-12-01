@@ -1,0 +1,42 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug",
+      "cargo": {
+        "args": [
+          "build",
+          "--bin=advent-of-code-2023",
+          "--package=advent-of-code-2023"
+        ],
+        "filter": {
+          "name": "advent-of-code-2023",
+          "kind": "bin"
+        }
+      },
+      "args": ["1"],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug unit tests",
+      "cargo": {
+        "args": [
+          "test",
+          "--no-run",
+          "--bin=advent-of-code-2023",
+          "--package=advent-of-code-2023"
+        ],
+        "filter": {
+          "name": "advent-of-code-2023",
+          "kind": "bin"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    }
+  ]
+}
