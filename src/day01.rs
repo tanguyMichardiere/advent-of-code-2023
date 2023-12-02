@@ -1,8 +1,7 @@
-use regex::Regex;
+use crate::regex;
 
 pub fn part_one(input: &str) -> u32 {
-    Regex::new(r"(?m)(?P<first>\d)(?:.*(?P<last>\d))?")
-        .unwrap()
+    regex!(r"(?m)(?P<first>\d)(?:.*(?P<last>\d))?")
         .captures_iter(input)
         .map(|caps| {
             let first = caps["first"].parse::<u32>().unwrap();
@@ -15,28 +14,26 @@ pub fn part_one(input: &str) -> u32 {
         .sum()
 }
 
-const DIGIT_PATTERN: &str = r"\d|one|two|three|four|five|six|seven|eight|nine";
-fn parse_digit(input: &str) -> u32 {
-    match input {
-        "0" => 0,
-        "1" | "one" => 1,
-        "2" | "two" => 2,
-        "3" | "three" => 3,
-        "4" | "four" => 4,
-        "5" | "five" => 5,
-        "6" | "six" => 6,
-        "7" | "seven" => 7,
-        "8" | "eight" => 8,
-        "9" | "nine" => 9,
-        _ => unreachable!(),
-    }
-}
-
 pub fn part_two(input: &str) -> u32 {
-    Regex::new(&format!(
-        r"(?m)(?P<first>{DIGIT_PATTERN})(?:.*(?P<last>{DIGIT_PATTERN}))?"
-    ))
-    .unwrap()
+    fn parse_digit(input: &str) -> u32 {
+        match input {
+            "0" => 0,
+            "1" | "one" => 1,
+            "2" | "two" => 2,
+            "3" | "three" => 3,
+            "4" | "four" => 4,
+            "5" | "five" => 5,
+            "6" | "six" => 6,
+            "7" | "seven" => 7,
+            "8" | "eight" => 8,
+            "9" | "nine" => 9,
+            _ => unreachable!(),
+        }
+    }
+
+    regex!(
+        r"(?m)(?P<first>\d|one|two|three|four|five|six|seven|eight|nine)(?:.*(?P<last>\d|one|two|three|four|five|six|seven|eight|nine))?"
+    )
     .captures_iter(input)
     .map(|caps| {
         let first = parse_digit(&caps["first"]);
