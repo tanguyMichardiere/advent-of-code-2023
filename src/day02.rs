@@ -4,7 +4,6 @@ pub fn part_one(input: &str) -> u32 {
     regex!(r"(?m)Game (?P<game>\d+): (?P<cubes>.+)")
         .captures_iter(input)
         .filter_map(|caps| {
-            let game = caps["game"].parse::<u32>().unwrap();
             if regex!(r"(?P<set>\d[^;]+)")
                 .captures_iter(&caps["cubes"])
                 .all(|caps| {
@@ -21,7 +20,7 @@ pub fn part_one(input: &str) -> u32 {
                         })
                 })
             {
-                Some(game)
+                Some(caps["game"].parse::<u32>().unwrap())
             } else {
                 None
             }
