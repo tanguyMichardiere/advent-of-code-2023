@@ -3,6 +3,7 @@ use std::time::Duration;
 mod day01;
 mod day02;
 mod day03;
+mod day04;
 mod macros;
 
 fn timed<F, O>(function: F, input: &str) -> (String, Duration)
@@ -31,6 +32,11 @@ fn main() {
     results.push((
         timed(day03::part_one, &input),
         timed(day03::part_two, &input),
+    ));
+    let input = std::fs::read_to_string("inputs/04").unwrap();
+    results.push((
+        timed(day04::part_one, &input),
+        timed(day04::part_two, &input),
     ));
     for (day, ((part_one_answer, part_one_duration), (part_two_answer, part_two_duration))) in
         results.iter().enumerate()
