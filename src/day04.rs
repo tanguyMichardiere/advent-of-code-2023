@@ -25,11 +25,11 @@ pub fn part_one(input: &str) -> u32 {
 }
 
 pub fn part_two(input: &str) -> u32 {
-    let mut copies = HashMap::<u32, u32>::new();
+    let mut copies = HashMap::<usize, u32>::new();
     for caps in regex!(r"(?m)^Card +(?P<card>\d+): +(?P<winning>[\d ]+) +\| +(?P<numbers>[\d ]+)$")
         .captures_iter(input)
     {
-        let card = caps["card"].parse::<u32>().unwrap();
+        let card = caps["card"].parse::<usize>().unwrap();
         let card_count = *copies.entry(card).or_insert(1);
         let winning = regex!(r"(\d+)")
             .captures_iter(&caps["winning"])
@@ -39,7 +39,7 @@ pub fn part_two(input: &str) -> u32 {
             .captures_iter(&caps["numbers"])
             .map(|caps| caps[1].parse::<u32>().unwrap())
             .filter(|number| winning.contains(number))
-            .count() as u32;
+            .count();
         for i in 0..matches {
             *copies.entry(card + 1 + i).or_insert(1) += card_count;
         }
