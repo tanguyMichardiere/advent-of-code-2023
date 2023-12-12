@@ -113,21 +113,28 @@ fn is_valid(row: &[Option<bool>], expected_groups: &[usize]) -> bool {
     true
 }
 
-fn count_possibilities(row: Vec<Option<bool>>, expected_groups: &[usize]) -> usize {
+fn count_possibilities(mut row: Vec<Option<bool>>, expected_groups: &[usize]) -> usize {
     match row.iter().find_position(|damaged| damaged.is_none()) {
         Some((first_unknown_position, _)) => {
-            let mut with_false = row.clone();
-            with_false[first_unknown_position] = Some(false);
-            let mut with_true = row;
-            with_true[first_unknown_position] = Some(true);
-            let mut total = 0;
-            if is_valid(&with_false, expected_groups) {
-                total += count_possibilities(with_false, expected_groups);
+            row[first_unknown_position] = Some(false);
+            let with_false_is_valid = is_valid(&row, expected_groups);
+            row[first_unknown_position] = Some(true);
+            let with_true_is_valid = is_valid(&row, expected_groups);
+            match (with_false_is_valid, with_true_is_valid) {
+                (false, false) => 0,
+                (false, true) => count_possibilities(row, expected_groups),
+                (true, false) => {
+                    row[first_unknown_position] = Some(false);
+                    count_possibilities(row, expected_groups)
+                }
+                (true, true) => {
+                    // we only clone `row` if we really have to
+                    let mut with_false = row.clone();
+                    with_false[first_unknown_position] = Some(false);
+                    count_possibilities(with_false, expected_groups)
+                        + count_possibilities(row, expected_groups)
+                }
             }
-            if is_valid(&with_true, expected_groups) {
-                total += count_possibilities(with_true, expected_groups);
-            }
-            total
         }
         None => 1,
     }
@@ -139,19 +146,17 @@ pub fn part_one(input: &str) -> usize {
         .sum()
 }
 
-// fn unfold((mut row, groups): (Vec<Option<bool>>, Vec<usize>)) -> (Vec<Option<bool>>, Vec<usize>) {
-//     let initial_row = row.clone();
-//     for _ in 0..4 {
-//         row.push(None);
-//         row.extend(initial_row.iter());
-//     }
-//     (row, groups.repeat(5))
-// }
-
 pub fn part_two(input: &str) -> usize {
     parse(input)
-        // FIXME
-        // .map(unfold)
+        // FIXME: complexity
+        // .map(|(mut row, groups): (Vec<Option<bool>>, Vec<usize>)| {
+        //     let initial_row = row.clone();
+        //     for _ in 0..4 {
+        //         row.push(None);
+        //         row.extend(initial_row.iter());
+        //     }
+        //     (row, groups.repeat(5))
+        // })
         .map(|(row, groups)| count_possibilities(row, &groups))
         .sum()
 }
