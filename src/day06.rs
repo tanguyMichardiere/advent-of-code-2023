@@ -28,7 +28,7 @@ pub fn part_one(input: &str) -> usize {
 }
 
 pub fn part_two(input: &str) -> usize {
-    let well_kerned_input = input.replace(" ", "");
+    let well_kerned_input = input.replace(' ', "");
     let caps = regex!(r"Time:(?P<time>\d+)\nDistance:(?P<distance>\d+)")
         .captures(&well_kerned_input)
         .unwrap();

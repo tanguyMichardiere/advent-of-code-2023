@@ -14,7 +14,7 @@ fn parse_galaxies(input: &str) -> Vec<(usize, usize)> {
         .collect()
 }
 
-fn shift(galaxies: &mut Vec<(usize, usize)>, expansion: usize) {
+fn shift(galaxies: &mut [(usize, usize)], expansion: usize) {
     let non_empty_columns = galaxies.iter().map(|(x, _)| *x).collect::<HashSet<_>>();
     let non_empty_rows = galaxies.iter().map(|(_, y)| *y).collect::<HashSet<_>>();
     let mut column_shift = 0;
@@ -41,7 +41,7 @@ fn shift(galaxies: &mut Vec<(usize, usize)>, expansion: usize) {
     }
 }
 
-fn distances_sum(galaxies: &Vec<(usize, usize)>) -> usize {
+fn distances_sum(galaxies: &[(usize, usize)]) -> usize {
     galaxies
         .iter()
         .tuple_combinations()
