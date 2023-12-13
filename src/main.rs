@@ -1,5 +1,6 @@
 use std::time::Duration;
 
+mod cache;
 mod day01;
 mod day02;
 mod day03;

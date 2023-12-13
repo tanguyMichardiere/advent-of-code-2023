@@ -1,24 +1,8 @@
-use itertools::Itertools;
-use regex::bytes::Regex;
+use cached::proc_macro::cached;
 
 use crate::regex;
 
-fn groups_regex(groups: &[usize]) -> Regex {
-    Regex::new(&format!(
-        r"^[.?]*{}[.?]*$",
-        groups
-            .iter()
-            .map(|group| if group > &1 {
-                format!(r"[#?]{{{}}}", group)
-            } else {
-                r"[#?]".to_owned()
-            })
-            .join(r"[.?]+")
-    ))
-    .unwrap()
-}
-
-fn parse(input: &str, fold: usize) -> impl Iterator<Item = (Vec<u8>, Regex)> + '_ {
+fn parse(input: &str, fold: usize) -> impl Iterator<Item = (Vec<u8>, Vec<usize>)> + '_ {
     regex!(r"(?P<row>[.#\?]+) (?P<groups>[\d,]+)")
         .captures_iter(input)
         .map(move |caps| {
@@ -34,53 +18,46 @@ fn parse(input: &str, fold: usize) -> impl Iterator<Item = (Vec<u8>, Regex)> + '
                 row.extend(initial_row.iter());
                 groups.extend(&initial_groups);
             }
-            (row, groups_regex(&groups))
+            (row, groups)
         })
 }
 
-fn count_possibilities(mut row: Vec<u8>, regex: &Regex) -> usize {
-    match row.iter().find_position(|char| char == &&b'?') {
-        Some((first_unknown_position, _)) => {
-            row[first_unknown_position] = b'.';
-            let with_dot_is_valid = regex.is_match(&row);
-            row[first_unknown_position] = b'#';
-            let with_hash_is_valid = regex.is_match(&row);
-            match (with_dot_is_valid, with_hash_is_valid) {
-                (false, false) => 0,
-                (false, true) => count_possibilities(row, regex),
-                (true, false) => {
-                    row[first_unknown_position] = b'.';
-                    count_possibilities(row, regex)
-                }
-                (true, true) => {
-                    // only clone `row` if it's really necessary
-                    let mut with_dot = row.clone();
-                    with_dot[first_unknown_position] = b'.';
-                    count_possibilities(with_dot, regex) + count_possibilities(row, regex)
-                }
-            }
-        }
-        None => 1,
+// credits: https://github.com/maksverver/AdventOfCode/blob/master/2023/12.py
+#[cached(key = "u64", convert = "{ crate::cache::hash((row, groups)) }")]
+fn count_possibilities(row: &[u8], groups: &[usize]) -> usize {
+    if groups.is_empty() {
+        return if row.contains(&b'#') { 0 } else { 1 };
     }
+    let group = groups[0];
+    if row.len() < group {
+        return 0;
+    }
+    let mut result = 0;
+    if row[0] != b'#' {
+        result += count_possibilities(&row[1..], groups);
+    }
+    if !row[..group].contains(&b'.') && row[group] != b'#' {
+        result += count_possibilities(&row[(group + 1)..], &groups[1..]);
+    }
+    result
 }
 
 pub fn part_one(input: &str) -> usize {
     parse(input, 1)
-        .map(|(row, regex)| count_possibilities(row, &regex))
+        .map(|(mut row, groups)| {
+            row.push(b'.');
+            count_possibilities(&row, &groups)
+        })
         .sum()
 }
 
-pub fn part_two(input: &str) -> String {
-    // FIXME: complexity
-    // parse(input, 5)
-    //     .map(|(row, regex)| count_possibilities(row, &regex))
-    //     .sum()
-    format!(
-        "{}\ncomplexity issue; this result is incorrect",
-        parse(input, 1)
-            .map(|(row, regex)| count_possibilities(row, &regex))
-            .sum::<usize>()
-    )
+pub fn part_two(input: &str) -> usize {
+    parse(input, 5)
+        .map(|(mut row, groups)| {
+            row.push(b'.');
+            count_possibilities(&row, &groups)
+        })
+        .sum()
 }
 
 #[cfg(test)]
@@ -95,9 +72,9 @@ mod tests {
         assert_eq!(part_one(&input), 21);
     }
 
-    // #[test]
-    // fn test_part_two() {
-    //     let input = read_to_string("examples/12/1").unwrap();
-    //     assert_eq!(part_two(&input), 525152);
-    // }
+    #[test]
+    fn test_part_two() {
+        let input = read_to_string("examples/12/1").unwrap();
+        assert_eq!(part_two(&input), 525152);
+    }
 }
