@@ -8,7 +8,11 @@ fn groups_regex(groups: &[usize]) -> Regex {
         r"^[.?]*{}[.?]*$",
         groups
             .iter()
-            .map(|group| format!(r"[#?]{{{}}}", group))
+            .map(|group| if group > &1 {
+                format!(r"[#?]{{{}}}", group)
+            } else {
+                r"[#?]".to_owned()
+            })
             .join(r"[.?]+")
     ))
     .unwrap()
