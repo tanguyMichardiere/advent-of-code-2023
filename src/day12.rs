@@ -1,9 +1,18 @@
-use indicatif::ParallelProgressIterator;
 use itertools::Itertools;
-use rayon::prelude::*;
 use regex::bytes::Regex;
 
 use crate::regex;
+
+fn groups_regex(groups: &[usize]) -> Regex {
+    Regex::new(&format!(
+        r"^[.?]*{}[.?]*$",
+        groups
+            .iter()
+            .map(|group| format!(r"[#?]{{{}}}", group))
+            .join(r"[.?]+")
+    ))
+    .unwrap()
+}
 
 fn parse(input: &str, fold: usize) -> impl Iterator<Item = (Vec<u8>, Regex)> + '_ {
     regex!(r"(?P<row>[.#\?]+) (?P<groups>[\d,]+)")
@@ -11,21 +20,17 @@ fn parse(input: &str, fold: usize) -> impl Iterator<Item = (Vec<u8>, Regex)> + '
         .map(move |caps| {
             let mut row = caps["row"].as_bytes().to_owned();
             let initial_row = row.clone();
-            let mut inner_pattern = regex!(r"(?P<group>\d+)")
+            let mut groups = regex!(r"(?P<group>\d+)")
                 .captures_iter(&caps["groups"])
-                .map(|caps| format!(r"[#?]{{{}}}", caps["group"].parse::<usize>().unwrap()))
-                .join(r"[.?]+");
-            let initial_inner_pattern = inner_pattern.clone();
+                .map(|caps| caps["group"].parse::<usize>().unwrap())
+                .collect::<Vec<_>>();
+            let initial_groups = groups.clone();
             for _ in 1..fold {
                 row.push(b'?');
                 row.extend(initial_row.iter());
-                inner_pattern.push_str(r"[.?]+");
-                inner_pattern.push_str(&initial_inner_pattern);
+                groups.extend(&initial_groups);
             }
-            (
-                row,
-                Regex::new(&format!(r"^[.?]*{}[.?]*$", inner_pattern)).unwrap(),
-            )
+            (row, groups_regex(&groups))
         })
 }
 
@@ -61,13 +66,17 @@ pub fn part_one(input: &str) -> usize {
         .sum()
 }
 
-pub fn part_two(input: &str) -> usize {
+pub fn part_two(input: &str) -> String {
     // FIXME: complexity
-    parse(input, 1)
-        .par_bridge()
-        .map(|(row, regex)| count_possibilities(row, &regex))
-        // .progress_count(input.lines().count() as u64)
-        .sum()
+    // parse(input, 5)
+    //     .map(|(row, regex)| count_possibilities(row, &regex))
+    //     .sum()
+    format!(
+        "{}\ncomplexity issue; this result is incorrect",
+        parse(input, 1)
+            .map(|(row, regex)| count_possibilities(row, &regex))
+            .sum::<usize>()
+    )
 }
 
 #[cfg(test)]

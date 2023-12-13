@@ -12,6 +12,7 @@ mod day09;
 mod day10;
 mod day11;
 mod day12;
+mod day13;
 mod macros;
 
 fn timed<F, O>(function: F, input: &str) -> (String, Duration)
@@ -86,6 +87,11 @@ fn main() {
     results.push((
         timed(day12::part_one, &input),
         timed(day12::part_two, &input),
+    ));
+    let input = std::fs::read_to_string("inputs/13").unwrap();
+    results.push((
+        timed(day13::part_one, &input),
+        timed(day13::part_two, &input),
     ));
     for (day, ((part_one_answer, part_one_duration), (part_two_answer, part_two_duration))) in
         results.iter().enumerate()
