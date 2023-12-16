@@ -1,11 +1,15 @@
 enum Mirror {
-    Right, // /
-    Left,  // \
+    /// `/`
+    Right,
+    /// `\`
+    Left,
 }
 
 enum Splitter {
-    Vertical,   // |
-    Horizontal, // -
+    /// `|`
+    Vertical,
+    /// `-`
+    Horizontal,
 }
 
 enum Object {
@@ -103,26 +107,38 @@ impl From<char> for Tile {
     }
 }
 
+impl Tile {
+    fn is_energized(&self) -> bool {
+        !self.beams.is_empty()
+    }
+
+    fn reset(&mut self) {
+        self.beams.truncate(0);
+    }
+}
+
 struct Grid {
     tiles: Vec<Vec<Tile>>,
     size: usize,
 }
 
-impl Grid {
-    fn parse(input: &str) -> Self {
-        let tiles = input
+impl From<&str> for Grid {
+    fn from(value: &str) -> Self {
+        let tiles = value
             .lines()
             .map(|line| line.chars().map(Tile::from).collect::<Vec<_>>())
             .collect::<Vec<_>>();
         let size = tiles.len();
         Self { tiles, size }
     }
+}
 
+impl Grid {
     fn advance_beam(&mut self, coordinates: Coordinates, direction: Direction) {
         let Tile { object, beams } = &mut self.tiles[coordinates.1][coordinates.0];
         if !beams.contains(&direction) {
             beams.push(direction.clone());
-            match &object {
+            match object {
                 None => {
                     if let Some(coordinates) = direction.next(coordinates, self.size) {
                         self.advance_beam(coordinates, direction);
@@ -148,31 +164,27 @@ impl Grid {
     fn energy(&self) -> usize {
         self.tiles
             .iter()
-            .map(|row| {
-                row.iter()
-                    .filter(|Tile { beams, .. }| !beams.is_empty())
-                    .count()
-            })
+            .map(|row| row.iter().filter(|tile| tile.is_energized()).count())
             .sum()
     }
 
     fn reset(&mut self) {
         for row in &mut self.tiles {
             for tile in row {
-                tile.beams.truncate(0);
+                tile.reset();
             }
         }
     }
 }
 
 pub fn part_one(input: &str) -> usize {
-    let mut grid = Grid::parse(input);
+    let mut grid = Grid::from(input);
     grid.advance_beam((0, 0), Direction::Right);
     grid.energy()
 }
 
 pub fn part_two(input: &str) -> usize {
-    let mut grid = Grid::parse(input);
+    let mut grid = Grid::from(input);
     let mut max_energy = 0;
     for i in 0..grid.size {
         grid.advance_beam((0, i), Direction::Right);
