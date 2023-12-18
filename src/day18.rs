@@ -20,25 +20,31 @@ fn points(instructions: &[Instruction]) -> Vec<(i64, i64)> {
 }
 
 fn inner_area(points: &[(i64, i64)]) -> u64 {
+    // shoelace formula
     points
         .iter()
         .circular_tuple_windows()
         .map(|(a, b)| a.0 * b.1 - a.1 * b.0)
         .sum::<i64>()
-        .abs() as u64
+        .unsigned_abs()
         / 2
 }
 
-// the shoelace algorithm doesn't take the borders into account
+// the shoelace formula doesn't take the borders into account
 fn outer_area(instructions: &[Instruction]) -> u64 {
+    // number of borders = number of corners
     let number_of_borders = instructions.len() as u64;
+    // there are 4 more outward corners than inward ones because it's a closed polygon
     let inward_corners = (number_of_borders - 4) / 2;
     let outward_corners = inward_corners + 4;
     let total_border_len = instructions
         .iter()
         .map(|(_, distance)| distance)
         .sum::<usize>() as u64;
-    (2 * (total_border_len - number_of_borders) + 3 * outward_corners + inward_corners) / 4
+    // each border section that is not a corner adds 1/2
+    // each outward corner adds 3/4
+    // each inward corner add 1/4
+    (total_border_len - number_of_borders) / 2 + (3 * outward_corners + inward_corners) / 4
 }
 
 pub fn part_one(input: &str) -> u64 {
@@ -61,22 +67,21 @@ pub fn part_one(input: &str) -> u64 {
 }
 
 pub fn part_two(input: &str) -> u64 {
-    let instructions =
-        regex!(r"[URDL] \d+ \(#(?P<distance>[[:xdigit:]]{5})(?P<direction>[[:xdigit:]])\)")
-            .captures_iter(input)
-            .map(|caps| {
-                (
-                    match &caps["direction"] {
-                        "3" => Direction::Up,
-                        "0" => Direction::Right,
-                        "1" => Direction::Down,
-                        "2" => Direction::Left,
-                        _ => unreachable!(),
-                    },
-                    usize::from_str_radix(&caps["distance"], 16).unwrap(),
-                )
-            })
-            .collect::<Vec<Instruction>>();
+    let instructions = regex!(r"[URDL] \d+ \(#(?P<distance>[[:xdigit:]]{5})(?P<direction>[0-3])\)")
+        .captures_iter(input)
+        .map(|caps| {
+            (
+                match &caps["direction"] {
+                    "3" => Direction::Up,
+                    "0" => Direction::Right,
+                    "1" => Direction::Down,
+                    "2" => Direction::Left,
+                    _ => unreachable!(),
+                },
+                usize::from_str_radix(&caps["distance"], 16).unwrap(),
+            )
+        })
+        .collect::<Vec<Instruction>>();
     inner_area(&points(&instructions)) + outer_area(&instructions)
 }
 

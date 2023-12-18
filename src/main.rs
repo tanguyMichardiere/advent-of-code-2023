@@ -1,3 +1,4 @@
+use std::fs::read_to_string;
 use std::time::Duration;
 
 mod cache;
@@ -34,99 +35,100 @@ where
 }
 
 fn main() {
-    let mut results = Vec::<((String, Duration), (String, Duration))>::with_capacity(25);
-    let input = std::fs::read_to_string("inputs/01").unwrap();
+    let mut results = Vec::with_capacity(25);
+    let input = read_to_string("inputs/01").unwrap();
     results.push((
         timed(day01::part_one, &input),
         timed(day01::part_two, &input),
     ));
-    let input = std::fs::read_to_string("inputs/02").unwrap();
+    let input = read_to_string("inputs/02").unwrap();
     results.push((
         timed(day02::part_one, &input),
         timed(day02::part_two, &input),
     ));
-    let input = std::fs::read_to_string("inputs/03").unwrap();
+    let input = read_to_string("inputs/03").unwrap();
     results.push((
         timed(day03::part_one, &input),
         timed(day03::part_two, &input),
     ));
-    let input = std::fs::read_to_string("inputs/04").unwrap();
+    let input = read_to_string("inputs/04").unwrap();
     results.push((
         timed(day04::part_one, &input),
         timed(day04::part_two, &input),
     ));
-    let input = std::fs::read_to_string("inputs/05").unwrap();
+    let input = read_to_string("inputs/05").unwrap();
     results.push((
         timed(day05::part_one, &input),
         timed(day05::part_two, &input),
     ));
-    let input = std::fs::read_to_string("inputs/06").unwrap();
+    let input = read_to_string("inputs/06").unwrap();
     results.push((
         timed(day06::part_one, &input),
         timed(day06::part_two, &input),
     ));
-    let input = std::fs::read_to_string("inputs/07").unwrap();
+    let input = read_to_string("inputs/07").unwrap();
     results.push((
         timed(day07::part_one, &input),
         timed(day07::part_two, &input),
     ));
-    let input = std::fs::read_to_string("inputs/08").unwrap();
+    let input = read_to_string("inputs/08").unwrap();
     results.push((
         timed(day08::part_one, &input),
         timed(day08::part_two, &input),
     ));
-    let input = std::fs::read_to_string("inputs/09").unwrap();
+    let input = read_to_string("inputs/09").unwrap();
     results.push((
         timed(day09::part_one, &input),
         timed(day09::part_two, &input),
     ));
-    let input = std::fs::read_to_string("inputs/10").unwrap();
+    let input = read_to_string("inputs/10").unwrap();
     results.push((
         timed(day10::part_one, &input),
         timed(day10::part_two, &input),
     ));
-    let input = std::fs::read_to_string("inputs/11").unwrap();
+    let input = read_to_string("inputs/11").unwrap();
     results.push((
         timed(day11::part_one, &input),
         timed(day11::part_two, &input),
     ));
-    let input = std::fs::read_to_string("inputs/12").unwrap();
+    let input = read_to_string("inputs/12").unwrap();
     results.push((
         timed(day12::part_one, &input),
         timed(day12::part_two, &input),
     ));
-    let input = std::fs::read_to_string("inputs/13").unwrap();
+    let input = read_to_string("inputs/13").unwrap();
     results.push((
         timed(day13::part_one, &input),
         timed(day13::part_two, &input),
     ));
-    let input = std::fs::read_to_string("inputs/14").unwrap();
+    let input = read_to_string("inputs/14").unwrap();
     results.push((
         timed(day14::part_one, &input),
         timed(day14::part_two, &input),
     ));
-    let input = std::fs::read_to_string("inputs/15").unwrap();
+    let input = read_to_string("inputs/15").unwrap();
     results.push((
         timed(day15::part_one, &input),
         timed(day15::part_two, &input),
     ));
-    let input = std::fs::read_to_string("inputs/16").unwrap();
+    let input = read_to_string("inputs/16").unwrap();
     results.push((
         timed(day16::part_one, &input),
         timed(day16::part_two, &input),
     ));
-    let input = std::fs::read_to_string("inputs/17").unwrap();
+    let input = read_to_string("inputs/17").unwrap();
     results.push((
         timed(day17::part_one, &input),
         timed(day17::part_two, &input),
     ));
-    let input = std::fs::read_to_string("inputs/18").unwrap();
+    let input = read_to_string("inputs/18").unwrap();
     results.push((
         timed(day18::part_one, &input),
         timed(day18::part_two, &input),
     ));
+    let mut total_duration = Duration::ZERO;
     for (day, ((part_one_answer, part_one_duration), (part_two_answer, part_two_duration))) in
-        results.iter().enumerate()
+        results.into_iter().enumerate()
     {
         println!("# Day {}", day + 1);
         println!("## Part 1");
@@ -135,13 +137,8 @@ fn main() {
         println!("## Part 2");
         println!("{part_two_answer}");
         println!("computed in {part_two_duration:?}");
+        total_duration += part_one_duration + part_two_duration;
     }
     println!("# Total");
-    println!(
-        "computed in {:?}",
-        results
-            .iter()
-            .map(|((_, part_one), (_, part_two))| *part_one + *part_two)
-            .sum::<Duration>()
-    );
+    println!("computed in {:?}", total_duration);
 }
