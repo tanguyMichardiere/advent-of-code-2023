@@ -18,6 +18,7 @@ mod day14;
 mod day15;
 mod day16;
 mod day17;
+mod day18;
 mod grid;
 mod macros;
 
@@ -118,6 +119,11 @@ fn main() {
     results.push((
         timed(day17::part_one, &input),
         timed(day17::part_two, &input),
+    ));
+    let input = std::fs::read_to_string("inputs/18").unwrap();
+    results.push((
+        timed(day18::part_one, &input),
+        timed(day18::part_two, &input),
     ));
     for (day, ((part_one_answer, part_one_duration), (part_two_answer, part_two_duration))) in
         results.iter().enumerate()
