@@ -20,6 +20,7 @@ mod day15;
 mod day16;
 mod day17;
 mod day18;
+mod day19;
 mod grid;
 mod macros;
 
@@ -125,6 +126,11 @@ fn main() {
     results.push((
         timed(day18::part_one, &input),
         timed(day18::part_two, &input),
+    ));
+    let input = read_to_string("inputs/19").unwrap();
+    results.push((
+        timed(day19::part_one, &input),
+        timed(day19::part_two, &input),
     ));
     let mut total_duration = Duration::ZERO;
     for (day, ((part_one_answer, part_one_duration), (part_two_answer, part_two_duration))) in
