@@ -2,32 +2,14 @@ use std::collections::HashMap;
 use std::iter;
 use std::str::FromStr;
 
-use itertools::Itertools;
-
 use crate::regex;
 
 struct State {
-    modules: HashMap<u16, Module>,
+    modules: HashMap<String, Module>,
     low_pulse_count: usize,
     high_pulse_count: usize,
-    before_rx: u16,
-    cycle_lens: HashMap<u16, Option<usize>>,
-}
-
-const BUTTON: u16 = 0;
-const BROADCASTER: u16 = 1;
-const RX: u16 = 2;
-
-fn id(name: &str) -> u16 {
-    match name {
-        "broadcaster" => BROADCASTER,
-        "rx" => RX,
-        name if name.len() == 2 => {
-            let (a, b) = name.chars().collect_tuple().unwrap();
-            ((a as u16) << 8) + (b as u16)
-        }
-        _ => unreachable!(),
-    }
+    before_rx: String,
+    cycle_lens: HashMap<String, Option<usize>>,
 }
 
 impl FromStr for State {
@@ -40,19 +22,19 @@ impl FromStr for State {
                 .map(|caps| {
                     let outputs = regex!(r"(?P<name>[a-z]+)")
                         .captures_iter(&caps["outputs"])
-                        .map(|caps| id(&caps["name"]))
+                        .map(|caps| caps["name"].to_owned())
                         .collect();
                     match &caps["name"] {
                         "broadcaster" => (
-                            id("broadcaster"),
+                            "broadcaster".to_owned(),
                             Module::Broadcaster(BroadcasterModule { outputs }),
                         ),
                         name if name.starts_with("%") => (
-                            id(&name[1..]),
+                            name[1..].to_owned(),
                             Module::FlipFlop(FlipFlopModule { on: false, outputs }),
                         ),
                         name if name.starts_with("&") => (
-                            id(&name[1..]),
+                            name[1..].to_owned(),
                             Module::Conjunction(ConjunctionModule {
                                 memory: HashMap::new(),
                                 outputs,
@@ -68,13 +50,13 @@ impl FromStr for State {
             for output in module.outputs() {
                 match modules.get(output) {
                     None => {
-                        empty_modules.push(*output);
+                        empty_modules.push(output.clone());
                     }
                     Some(Module::Conjunction(_)) => {
                         conjunction_inputs
-                            .entry(*output)
+                            .entry(output.clone())
                             .or_insert(Vec::new())
-                            .push(*id);
+                            .push(id.clone());
                     }
                     _ => {}
                 }
@@ -86,25 +68,26 @@ impl FromStr for State {
         for (name, inputs) in conjunction_inputs {
             if let Module::Conjunction(conjunction) = modules.get_mut(&name).unwrap() {
                 for input in inputs {
-                    conjunction.memory.insert(input, false);
+                    conjunction.memory.insert(input.clone(), false);
                 }
             }
         }
-        let before_rx = *modules
+        let before_rx = modules
             .iter()
             .find_map(|(id, module)| {
-                if module.outputs().any(|output| output == &RX) {
+                if module.outputs().any(|output| output == "rx") {
                     Some(id)
                 } else {
                     None
                 }
             })
-            .unwrap();
+            .unwrap()
+            .clone();
         let cycle_lens = modules
             .keys()
             .filter_map(|id| {
                 if modules[id].outputs().any(|output| output == &before_rx) {
-                    Some((*id, None))
+                    Some((id.clone(), None))
                 } else {
                     None
                 }
@@ -132,9 +115,7 @@ impl State {
             if pulse.to == self.before_rx && pulse.high {
                 *self.cycle_lens.get_mut(&pulse.from).unwrap() = Some(count);
             }
-            if let Some(module) = self.modules.get_mut(&pulse.to) {
-                next_pulses.extend(module.resolve(&pulse));
-            }
+            next_pulses.extend(self.modules.get_mut(&pulse.to).unwrap().resolve(&pulse));
         }
         if !next_pulses.is_empty() {
             self.resolve(next_pulses.into_iter(), count);
@@ -144,8 +125,8 @@ impl State {
     fn push_button(&mut self, count: usize) {
         self.resolve(
             iter::once(Pulse {
-                from: BUTTON,
-                to: BROADCASTER,
+                from: "button".to_owned(),
+                to: "broadcaster".to_owned(),
                 high: false,
             }),
             count,
@@ -161,7 +142,7 @@ enum Module {
 }
 
 impl Module {
-    fn outputs(&self) -> Box<dyn Iterator<Item = &u16> + '_> {
+    fn outputs<'a>(&'a self) -> Box<dyn Iterator<Item = &'a String> + 'a> {
         match self {
             Self::Broadcaster(broadcaster_module) => Box::new(broadcaster_module.outputs.iter()),
             Self::FlipFlop(flip_flop_module) => Box::new(flip_flop_module.outputs.iter()),
@@ -181,14 +162,14 @@ impl Module {
 }
 
 struct BroadcasterModule {
-    outputs: Vec<u16>,
+    outputs: Vec<String>,
 }
 
 impl BroadcasterModule {
     fn resolve<'a>(&'a self, pulse: &'a Pulse) -> impl Iterator<Item = Pulse> + '_ {
-        self.outputs.iter().map(|output| Pulse {
-            from: pulse.to,
-            to: *output,
+        self.outputs.iter().map(move |output| Pulse {
+            from: pulse.to.clone(),
+            to: output.to_owned(),
             high: pulse.high,
         })
     }
@@ -196,7 +177,7 @@ impl BroadcasterModule {
 
 struct FlipFlopModule {
     on: bool,
-    outputs: Vec<u16>,
+    outputs: Vec<String>,
 }
 
 impl FlipFlopModule {
@@ -204,8 +185,8 @@ impl FlipFlopModule {
         if !pulse.high {
             self.on = !self.on;
             Box::new(self.outputs.iter().map(|output| Pulse {
-                from: pulse.to,
-                to: *output,
+                from: pulse.to.clone(),
+                to: output.to_owned(),
                 high: self.on,
             }))
         } else {
@@ -215,8 +196,8 @@ impl FlipFlopModule {
 }
 
 struct ConjunctionModule {
-    memory: HashMap<u16, bool>,
-    outputs: Vec<u16>,
+    memory: HashMap<String, bool>,
+    outputs: Vec<String>,
 }
 
 impl ConjunctionModule {
@@ -224,16 +205,16 @@ impl ConjunctionModule {
         *self.memory.get_mut(&pulse.from).unwrap() = pulse.high;
         let high = !self.memory.values().all(|high| *high);
         self.outputs.iter().map(move |output| Pulse {
-            from: pulse.to,
-            to: *output,
+            from: pulse.to.clone(),
+            to: output.to_owned(),
             high,
         })
     }
 }
 
 struct Pulse {
-    from: u16,
-    to: u16,
+    from: String,
+    to: String,
     high: bool,
 }
 
